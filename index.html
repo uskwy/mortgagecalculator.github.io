@@ -1,0 +1,1341 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Mortgage Maestro: Your ultimate AI-powered guide to mortgage planning, affordability estimation, and refinance calculations. Calculate monthly payments, total interest, amortization schedules, and more with multi-currency support.">
+    <meta name="keywords" content="mortgage calculator, affordability calculator, refinance calculator, home loan, interest rates, loan amortization, PITI calculator, real estate finance, mortgage planning, DTI ratio, multi-currency mortgage calculator, USD, EUR, GBP, JPY, CAD, AUD, INR, PKR">
+    <title> Mortgage Maestro - Advanced Calculator </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; border: 2px solid #1e293b; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .form-group input[type="number"], .form-group select, .form-group input[type="range"] { transition: all 0.3s ease-in-out; }
+        .form-group input[type="number"]:focus, .form-group select:focus, .form-group input[type="range"]:focus { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4); outline:none; }
+        ::placeholder { color: #64748b; opacity: 1; }
+        :-ms-input-placeholder { color: #64748b; }
+        ::-ms-input-placeholder { color: #64748b; }
+        thead th { position: sticky; top: 0; z-index: 10; background-color: #0f172a; }
+        .result-item-anim { opacity: 0; transform: translateY(10px); animation: fadeInItem 0.5s ease-out forwards; }
+        @keyframes fadeInItem { to { opacity: 1; transform: translateY(0); } }
+        .ad-placeholder { border: 2px dashed #334155; background-color: #1e293b; color: #64748b; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 0.875rem; border-radius: 0.5rem; }
+        .tab-button { transition: all 0.3s ease; }
+        .tab-button.active { border-color: #38bdf8; color: #38bdf8; background-color: #1e293b;}
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeInContent 0.6s ease-out; }
+        @keyframes fadeInContent { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+        
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #334155; border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        input[type="range"]:hover { opacity: 1; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #38bdf8; cursor: pointer; border-radius: 50%; border: 2px solid #0f172a; }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #38bdf8; cursor: pointer; border-radius: 50%; border: 2px solid #0f172a; }
+
+        @media print {
+            body * { visibility: hidden; }
+            .print-area, .print-area * { visibility: visible; }
+            .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px !important; }
+            .ad-placeholder, #errorDisplay, footer, header > .ad-placeholder, .no-print, .tab-buttons-container { display: none !important; }
+            main { grid-template-columns: 1fr !important; } 
+            .output-section, .input-section { grid-column: span 1 / span 1 !important; }
+            #loanBalanceChartContainer, #affordabilityChartContainer, #refinanceChartContainer { max-height: 280px !important; width:100% !important; margin-top: 20px !important; }
+            .bg-slate-800 { background-color: white !important; color: black !important; box-shadow: none !important; }
+            .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500 { color: black !important; }
+            .text-sky-400, .text-cyan-400, .text-teal-400, .text-green-400, .text-red-400\/80 { color: #1e40af !important; }
+            .border-sky-600, .border-slate-700, .border-slate-600\/50 { border-color: #ccc !important; }
+            .bg-slate-900\/50, .bg-gradient-to-br, .bg-slate-700\/80, .bg-slate-700, .bg-slate-800\/70, .bg-slate-900\/80 { background: white !important; }
+            table, th, td { border: 1px solid #ddd !important; }
+            h1, h2, h3, h4 { color: black !important; text-shadow: none !important; background: none !important; -webkit-background-clip: unset !important; background-clip: unset !important; }
+        }
+        .blog-post { border-left: 4px solid #38bdf8; padding-left: 1rem; margin-bottom: 1.5rem; }
+        .blog-post h3 { color: #7dd3fc; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-gray-900 text-slate-200 min-h-screen flex flex-col items-center p-2 sm:p-4 selection:bg-sky-500 selection:text-sky-900">
+
+    <div class="bg-slate-800 shadow-2xl rounded-2xl p-4 sm:p-6 lg:p-10 w-full max-w-6xl transform transition-all duration-500 hover:shadow-sky-500/30">
+        <header class="mb-6 md:mb-8 text-center">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-400 to-teal-500">
+                Mortgage Maestro <i class="fas fa-rocket text-teal-400 ml-1 sm:ml-2"></i>
+            </h1>
+            <p class="text-slate-400 mt-2 sm:mt-3 text-sm sm:text-lg">Your ultimate AI-powered guide to mortgage planning.</p>
+            <div class="ad-placeholder mt-4 mb-2 sm:mt-6 sm:mb-4 h-16 sm:h-20 w-full max-w-lg mx-auto no-print">
+                Header Ad Placeholder (e.g., 728x90 or responsive)
+            </div>
+        </header>
+
+        <div class="mb-6 tab-buttons-container no-print">
+            <div class="flex border-b border-slate-700">
+                <button class="tab-button active py-3 px-4 sm:px-6 text-slate-400 hover:text-sky-400 border-b-2 border-transparent focus:outline-none text-sm sm:text-base" data-tab="mortgageCalculatorTab">
+                    <i class="fas fa-calculator mr-2"></i>Mortgage Calculator
+                </button>
+                <button class="tab-button py-3 px-4 sm:px-6 text-slate-400 hover:text-sky-400 border-b-2 border-transparent focus:outline-none text-sm sm:text-base" data-tab="affordabilityEstimatorTab">
+                    <i class="fas fa-search-dollar mr-2"></i>Affordability
+                </button>
+                <button class="tab-button py-3 px-4 sm:px-6 text-slate-400 hover:text-sky-400 border-b-2 border-transparent focus:outline-none text-sm sm:text-base" data-tab="refinanceCalculatorTab">
+                    <i class="fas fa-exchange-alt mr-2"></i>Refinance
+                </button>
+                <button class="tab-button py-3 px-4 sm:px-6 text-slate-400 hover:text-sky-400 border-b-2 border-transparent focus:outline-none text-sm sm:text-base" data-tab="blogTab">
+                    <i class="fas fa-newspaper mr-2"></i>Blog
+                </button>
+            </div>
+        </div>
+
+        <div id="errorDisplay" class="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-600/80 border border-red-700 text-white rounded-lg hidden transition-all duration-300 ease-in-out no-print">
+             <i class="fas fa-exclamation-triangle mr-2"></i> <span id="errorMessageText"></span>
+        </div>
+        
+        <!-- Mortgage Calculator Tab -->
+        <div id="mortgageCalculatorTab" class="tab-content active">
+            <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 print-area">
+                <section class="input-section lg:col-span-2 space-y-4 sm:space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-semibold text-sky-400 mb-4 sm:mb-5 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                            <i class="fas fa-file-invoice-dollar mr-2 sm:mr-3 text-sky-500"></i> Loan Details
+                        </h2>
+                        <div class="form-group space-y-1 sm:space-y-2">
+                            <label for="currencySelect" class="block text-xs sm:text-sm font-medium text-slate-300">Currency</label>
+                            <select id="currencySelect" class="mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 appearance-none bg-no-repeat bg-right pr-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%239ca3af%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E'); background-position: right 0.5rem center; background-size: 1.5em 1.5em;">
+                            </select>
+                        </div>
+                        <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                            <label for="homePrice" class="block text-xs sm:text-sm font-medium text-slate-300">Home Price: <span id="homePriceSliderValue" class="font-bold text-sky-400"></span></label>
+                            <input type="range" id="homePriceSlider" min="10000" max="5000000" step="10000" value="350000" class="mt-1 mb-2">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                <input type="number" id="homePrice" value="350000" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 sm:gap-4 mt-3 sm:mt-4">
+                            <div class="form-group space-y-1 sm:space-y-2">
+                                <label for="downPayment" class="block text-xs sm:text-sm font-medium text-slate-300">Down Payment</label>
+                                 <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                    <input type="number" id="downPayment" value="70000" class="pl-5 sm:pl-7 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                                </div>
+                            </div>
+                            <div class="form-group space-y-1 sm:space-y-2">
+                                <label for="downPaymentPercent" class="block text-xs sm:text-sm font-medium text-slate-300">Down Payment (%)</label>
+                                <div class="relative">
+                                    <input type="number" id="downPaymentPercent" min="0" max="100" value="20" class="pr-6 sm:pr-8 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                                    <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group space-y-1 sm:space-y-2 mt-3 sm:mt-4">
+                            <label for="loanTerm" class="block text-xs sm:text-sm font-medium text-slate-300">Loan Term (Years)</label>
+                            <select id="loanTerm" class="mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 appearance-none bg-no-repeat bg-right pr-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%239ca3af%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E'); background-position: right 0.5rem center; background-size: 1.5em 1.5em;"></select>
+                        </div>
+                        <div class="form-group space-y-1 sm:space-y-2 mt-3 sm:mt-4">
+                            <label for="interestRate" class="block text-xs sm:text-sm font-medium text-slate-300">Annual Interest Rate (%): <span id="interestRateSliderValue" class="font-bold text-sky-400"></span></label>
+                            <input type="range" id="interestRateSlider" min="0.1" max="25" step="0.05" value="6.5" class="mt-1 mb-2"> <div class="relative">
+                                    <input type="number" id="interestRate" step="0.01" value="6.5" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                                    <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                                </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg sm:text-xl font-semibold text-sky-400 mb-3 sm:mb-4 mt-6 sm:mt-8 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                           <i class="fas fa-wallet mr-2 sm:mr-3 text-sky-500"></i> Additional Costs (Annual)
+                        </h2>
+                        <div class="form-group space-y-1 sm:space-y-2">
+                            <label for="propertyTaxes" class="block text-xs sm:text-sm font-medium text-slate-300">Property Taxes</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                <input type="number" id="propertyTaxes" value="4000" class="pl-5 sm:pl-7 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            </div>
+                        </div>
+                        <div class="form-group space-y-1 sm:space-y-2 mt-3 sm:mt-4">
+                            <label for="homeInsurance" class="block text-xs sm:text-sm font-medium text-slate-300">Homeowners Insurance</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                <input type="number" id="homeInsurance" value="1200" class="pl-5 sm:pl-7 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            </div>
+                        </div>
+                    </div>
+                     <div>
+                        <h2 class="text-lg sm:text-xl font-semibold text-sky-400 mb-3 sm:mb-4 mt-6 sm:mt-8 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                           <i class="fas fa-donate mr-2 sm:mr-3 text-sky-500"></i> Extra Payments (Optional)
+                        </h2>
+                        <div class="form-group space-y-1 sm:space-y-2">
+                            <label for="oneTimeExtraPayment" class="block text-xs sm:text-sm font-medium text-slate-300">One-Time Extra Payment</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                <input type="number" id="oneTimeExtraPayment" value="0" class="pl-5 sm:pl-7 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            </div>
+                        </div>
+                        <div class="form-group space-y-1 sm:space-y-2 mt-3 sm:mt-4">
+                            <label for="monthlyExtraPayment" class="block text-xs sm:text-sm font-medium text-slate-300">Recurring Monthly Extra Payment</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                                <input type="number" id="monthlyExtraPayment" value="0" class="pl-5 sm:pl-7 mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="calculateMortgageBtn" class="w-full mt-6 sm:mt-10 bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 hover:from-sky-600 hover:via-cyan-600 hover:to-teal-600 text-white font-semibold py-3 sm:py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300 focus:ring-opacity-75 flex items-center justify-center text-sm sm:text-base">
+                        <i class="fas fa-cogs mr-2"></i> Calculate Mortgage
+                    </button>
+                    <button id="printMortgageBtn" class="no-print w-full mt-3 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-slate-300 font-semibold py-3 sm:py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-slate-500 focus:ring-opacity-75 flex items-center justify-center text-sm sm:text-base">
+                        <i class="fas fa-print mr-2"></i> Download Report (PDF)
+                    </button>
+
+                    <div class="ad-placeholder mt-6 sm:mt-8 h-24 sm:h-32 no-print">
+                        Ad Placeholder (e.g., 300x100 or responsive)
+                    </div>
+                </section>
+                
+                <section class="output-section lg:col-span-3 space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-cyan-400 mb-4 border-b-2 border-cyan-600 pb-2 flex items-center">
+                        <i class="fas fa-chart-pie mr-2 sm:mr-3 text-cyan-500"></i> Calculation Summary
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base">
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Loan Amount: <span id="loanAmountResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Monthly P&I: <span id="monthlyPaymentPIResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Monthly Property Tax: <span id="monthlyPropertyTaxResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Monthly Home Insurance: <span id="monthlyHomeInsuranceResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-700/80 p-4 rounded-lg md:col-span-2">Total Monthly PITI: <span id="monthlyPITIResult" class="text-xl font-bold text-green-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Total Principal Paid: <span id="totalPrincipalResult" class="font-bold text-teal-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Total Interest Paid: <span id="totalInterestResult" class="font-bold text-red-400/80">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Total Payments (P+I): <span id="totalPaymentsResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Loan Payoff Date: <span id="loanPayoffDateResult" class="font-bold text-sky-400">N/A</span></div>
+                    </div>
+
+                    <div class="mt-6">
+                        <h3 class="text-lg sm:text-xl font-semibold text-cyan-400 mb-3">Loan Balance Over Time</h3>
+                        <div id="loanBalanceChartContainer" class="bg-slate-800/70 p-2 sm:p-4 rounded-lg min-h-[250px] sm:min-h-[300px]">
+                            <canvas id="loanBalanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <h3 class="text-lg sm:text-xl font-semibold text-cyan-400 mb-3">Amortization Schedule</h3>
+                        <div class="max-h-96 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800/70 custom-scrollbar">
+                            <table class="w-full text-left text-xs sm:text-sm">
+                                <thead class="bg-slate-700/80 text-slate-300 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-2 sm:p-3">#</th>
+                                        <th class="p-2 sm:p-3">Payment</th>
+                                        <th class="p-2 sm:p-3">Principal</th>
+                                        <th class="p-2 sm:p-3">Interest</th>
+                                        <th class="p-2 sm:p-3">Extra</th>
+                                        <th class="p-2 sm:p-3">Total Interest</th>
+                                        <th class="p-2 sm:p-3">Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="amortizationTableBody" class="divide-y divide-slate-600/50">
+                                    <tr><td colspan="7" class="p-4 text-center text-slate-500">Calculate mortgage to see schedule.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        
+        <!-- Affordability Estimator Tab -->
+        <div id="affordabilityEstimatorTab" class="tab-content">
+            <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 print-area">
+                <section class="input-section lg:col-span-2 space-y-4 sm:space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-sky-400 mb-4 sm:mb-5 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                        <i class="fas fa-bullseye mr-2 sm:mr-3 text-sky-500"></i> Your Financials
+                    </h2>
+                    <div class="form-group space-y-1 sm:space-y-2">
+                        <label for="affordAnnualIncome" class="block text-xs sm:text-sm font-medium text-slate-300">Gross Annual Income</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                            <input type="number" id="affordAnnualIncome" value="80000" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordMonthlyDebts" class="block text-xs sm:text-sm font-medium text-slate-300">Total Monthly Debts (car, cc, student loans)</label>
+                        <div class="relative">
+                             <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                            <input type="number" id="affordMonthlyDebts" value="500" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordDownPayment" class="block text-xs sm:text-sm font-medium text-slate-300">Available Down Payment</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                            <input type="number" id="affordDownPayment" value="50000" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                        </div>
+                    </div>
+
+                    <h2 class="text-lg sm:text-xl font-semibold text-sky-400 mb-3 sm:mb-4 mt-6 sm:mt-8 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                       <i class="fas fa-cogs mr-2 sm:mr-3 text-sky-500"></i> Loan & Property Assumptions
+                    </h2>
+                     <div class="form-group space-y-1 sm:space-y-2">
+                        <label for="affordInterestRate" class="block text-xs sm:text-sm font-medium text-slate-300">Estimated Annual Interest Rate (%)</label>
+                        <div class="relative">
+                            <input type="number" id="affordInterestRate" step="0.01" value="6.5" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordLoanTerm" class="block text-xs sm:text-sm font-medium text-slate-300">Loan Term (Years)</label>
+                        <select id="affordLoanTerm" class="mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 appearance-none bg-no-repeat bg-right pr-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%239ca3af%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E'); background-position: right 0.5rem center; background-size: 1.5em 1.5em;">
+                        </select>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordPropertyTaxesPercent" class="block text-xs sm:text-sm font-medium text-slate-300">Estimated Annual Property Tax (% of Home Price)</label>
+                         <div class="relative">
+                            <input type="number" id="affordPropertyTaxesPercent" step="0.01" value="1.2" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordHomeInsurancePercent" class="block text-xs sm:text-sm font-medium text-slate-300">Estimated Annual Home Insurance (% of Home Price)</label>
+                        <div class="relative">
+                            <input type="number" id="affordHomeInsurancePercent" step="0.01" value="0.5" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordDTIRatio" class="block text-xs sm:text-sm font-medium text-slate-300">Desired Debt-to-Income (DTI) Ratio (%) for Housing (PITI)</label>
+                        <div class="relative">
+                            <input type="number" id="affordDTIRatio" step="1" value="28" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500" title="Front-end DTI: PITI / Gross Monthly Income. Common limit is 28-36%.">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                     <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="affordTotalDTIRatio" class="block text-xs sm:text-sm font-medium text-slate-300">Desired Total Debt-to-Income (DTI) Ratio (%)</label>
+                        <div class="relative">
+                            <input type="number" id="affordTotalDTIRatio" step="1" value="36" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500" title="Back-end DTI: (PITI + Other Debts) / Gross Monthly Income. Common limit is 36-43%.">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+
+                    <button id="calculateAffordabilityBtn" class="w-full mt-6 sm:mt-10 bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 hover:from-sky-600 hover:via-cyan-600 hover:to-teal-600 text-white font-semibold py-3 sm:py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300 focus:ring-opacity-75 flex items-center justify-center text-sm sm:text-base">
+                        <i class="fas fa-search-dollar mr-2"></i> Estimate Affordability
+                    </button>
+                </section>
+                <section class="output-section lg:col-span-3 space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-cyan-400 mb-4 border-b-2 border-cyan-600 pb-2 flex items-center">
+                        <i class="fas fa-home mr-2 sm:mr-3 text-cyan-500"></i> Affordability Estimate
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base">
+                        <div class="bg-slate-700/80 p-4 rounded-lg md:col-span-2">Estimated Affordable Home Price: <span id="affordHomePriceResult" class="text-xl font-bold text-green-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Max Loan Amount: <span id="affordLoanAmountResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Max Monthly PITI: <span id="affordMaxPITIResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Max Monthly P&I: <span id="affordMaxPIResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Est. Monthly Taxes: <span id="affordEstTaxesResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Est. Monthly Insurance: <span id="affordEstInsuranceResult" class="font-bold text-sky-400">N/A</span></div>
+                    </div>
+                     <p class="text-xs text-slate-500 mt-4">Note: This is an estimate. Actual affordability depends on lender qualifications, credit score, and market conditions. Property taxes and insurance are estimated based on percentages of the affordable home price.</p>
+                </section>
+            </main>
+        </div>
+
+        <!-- Refinance Calculator Tab -->
+        <div id="refinanceCalculatorTab" class="tab-content">
+            <main class="grid grid-cols-1 lg:grid-cols-5 gap-6 md:gap-8 print-area">
+                <section class="input-section lg:col-span-2 space-y-4 sm:space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-sky-400 mb-4 sm:mb-5 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                        <i class="fas fa-landmark mr-2 sm:mr-3 text-sky-500"></i> Current Loan Details
+                    </h2>
+                    <div class="form-group space-y-1 sm:space-y-2">
+                        <label for="refiCurrentBalance" class="block text-xs sm:text-sm font-medium text-slate-300">Current Loan Balance</label>
+                         <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                            <input type="number" id="refiCurrentBalance" value="250000" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="refiCurrentInterestRate" class="block text-xs sm:text-sm font-medium text-slate-300">Current Annual Interest Rate (%)</label>
+                        <div class="relative">
+                            <input type="number" id="refiCurrentInterestRate" step="0.01" value="7.0" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="refiRemainingTerm" class="block text-xs sm:text-sm font-medium text-slate-300">Remaining Loan Term (Years)</label>
+                         <div class="relative">
+                            <input type="number" id="refiRemainingTerm" step="1" value="25" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                             <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">Yrs</span></div>
+                        </div>
+                    </div>
+
+                    <h2 class="text-lg sm:text-xl font-semibold text-sky-400 mb-3 sm:mb-4 mt-6 sm:mt-8 border-b-2 border-sky-600 pb-2 sm:pb-3 flex items-center">
+                       <i class="fas fa-file-signature mr-2 sm:mr-3 text-sky-500"></i> New Loan (Refinance) Details
+                    </h2>
+                     <div class="form-group space-y-1 sm:space-y-2">
+                        <label for="refiNewInterestRate" class="block text-xs sm:text-sm font-medium text-slate-300">New Annual Interest Rate (%)</label>
+                        <div class="relative">
+                            <input type="number" id="refiNewInterestRate" step="0.01" value="5.5" class="pr-6 sm:pr-8 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                            <div class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm">%</span></div>
+                        </div>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="refiNewLoanTerm" class="block text-xs sm:text-sm font-medium text-slate-300">New Loan Term (Years)</label>
+                        <select id="refiNewLoanTerm" class="mt-1 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 appearance-none bg-no-repeat bg-right pr-8" style="background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%239ca3af%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22M6%208l4%204%204-4%22%2F%3E%3C%2Fsvg%3E'); background-position: right 0.5rem center; background-size: 1.5em 1.5em;">
+                        </select>
+                    </div>
+                    <div class="form-group space-y-1 sm:space-y-2 mt-3">
+                        <label for="refiClosingCosts" class="block text-xs sm:text-sm font-medium text-slate-300">Refinance Closing Costs</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none"><span class="text-slate-500 text-xs sm:text-sm currency-symbol-display">$</span></div>
+                            <input type="number" id="refiClosingCosts" value="3000" class="pl-5 sm:pl-7 block w-full bg-slate-700 border-slate-600 text-slate-100 rounded-md shadow-sm p-2.5 sm:p-3 text-sm sm:text-base focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500">
+                        </div>
+                    </div>
+
+                    <button id="calculateRefinanceBtn" class="w-full mt-6 sm:mt-10 bg-gradient-to-r from-sky-500 via-cyan-500 to-teal-500 hover:from-sky-600 hover:via-cyan-600 hover:to-teal-600 text-white font-semibold py-3 sm:py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-cyan-300 focus:ring-opacity-75 flex items-center justify-center text-sm sm:text-base">
+                        <i class="fas fa-exchange-alt mr-2"></i> Analyze Refinance
+                    </button>
+                </section>
+                <section class="output-section lg:col-span-3 space-y-6 bg-slate-900/50 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <h2 class="text-xl sm:text-2xl font-semibold text-cyan-400 mb-4 border-b-2 border-cyan-600 pb-2 flex items-center">
+                        <i class="fas fa-balance-scale mr-2 sm:mr-3 text-cyan-500"></i> Refinance Analysis
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm sm:text-base">
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Current Monthly P&I: <span id="refiCurrentPIResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">New Monthly P&I: <span id="refiNewPIResult" class="font-bold text-green-400">N/A</span></div>
+                        <div class="bg-slate-700/80 p-4 rounded-lg md:col-span-2">Monthly Savings: <span id="refiMonthlySavingsResult" class="text-xl font-bold text-green-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Break-Even Point: <span id="refiBreakevenResult" class="font-bold text-sky-400">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Lifetime Interest Savings (P&I): <span id="refiLifetimeSavingsResult" class="font-bold text-teal-400">N/A</span></div>
+                         <div class="bg-slate-800/70 p-3 rounded-lg">Total Interest (Current Loan): <span id="refiTotalInterestCurrentResult" class="font-bold text-red-400/80">N/A</span></div>
+                        <div class="bg-slate-800/70 p-3 rounded-lg">Total Interest (New Loan): <span id="refiTotalInterestNewResult" class="font-bold text-red-400/80">N/A</span></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4">Note: Lifetime savings compares total P&I paid over the remaining term of the current loan versus the full term of the new loan. Does not include taxes, insurance, or potential cash-out impacts.</p>
+                </section>
+            </main>
+        </div>
+
+        <!-- Blog Tab -->
+        <div id="blogTab" class="tab-content">
+            <div class="p-4 sm:p-6 lg:p-8 bg-slate-900/50 rounded-xl shadow-lg">
+                <h2 class="text-2xl sm:text-3xl font-bold text-sky-400 mb-6 border-b-2 border-sky-600 pb-3">
+                    <i class="fas fa-newspaper mr-3 text-sky-500"></i> Mortgage Insights Blog
+                </h2>
+                <div class="space-y-8">
+                    <article class="blog-post">
+                        <h3 class="text-xl font-semibold mb-2">Understanding Your Mortgage Options</h3>
+                        <p class="text-slate-400 text-sm mb-2">Published: October 26, 2023</p>
+                        <p class="text-slate-300 leading-relaxed">
+                            Navigating the world of mortgages can be daunting. From fixed-rate to adjustable-rate, FHA to conventional, understanding the different types of loans available is the first step towards making an informed decision. We break down the pros and cons of common mortgage products to help you choose what's best for your financial situation.
+                        </p>
+                        <a href="#" class="text-sky-400 hover:text-sky-300 font-medium mt-2 inline-block">Read More &rarr;</a>
+                    </article>
+                    <article class="blog-post">
+                        <h3 class="text-xl font-semibold mb-2">5 Tips for Improving Your Credit Score Before Applying for a Mortgage</h3>
+                        <p class="text-slate-400 text-sm mb-2">Published: October 15, 2023</p>
+                        <p class="text-slate-300 leading-relaxed">
+                            Your credit score plays a crucial role in determining your mortgage interest rate and loan approval. A higher score can save you thousands over the life of your loan. Learn practical steps you can take to boost your creditworthiness, such as paying bills on time, reducing credit card debt, and disputing errors on your credit report.
+                        </p>
+                        <a href="#" class="text-sky-400 hover:text-sky-300 font-medium mt-2 inline-block">Read More &rarr;</a>
+                    </article>
+                    <article class="blog-post">
+                        <h3 class="text-xl font-semibold mb-2">The Hidden Costs of Homeownership</h3>
+                        <p class="text-slate-400 text-sm mb-2">Published: September 28, 2023</p>
+                        <p class="text-slate-300 leading-relaxed">
+                            Beyond the monthly mortgage payment (PITI), homeowners face various other expenses. These can include maintenance, repairs, HOA fees, and potential increases in property taxes or insurance. Budgeting for these "hidden" costs is essential for long-term financial stability as a homeowner.
+                        </p>
+                        <a href="#" class="text-sky-400 hover:text-sky-300 font-medium mt-2 inline-block">Read More &rarr;</a>
+                    </article>
+                </div>
+                 <div class="ad-placeholder mt-8 h-24 sm:h-32 no-print">
+                    Blog Ad Placeholder (e.g., responsive banner)
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-8 md:mt-12 text-center no-print">
+            <div class="ad-placeholder mb-4 sm:mb-6 h-16 sm:h-20 w-full max-w-md mx-auto">
+                Footer Ad Placeholder (e.g., 468x60 or responsive)
+            </div>
+            <p class="text-slate-500 text-xs sm:text-sm">&copy; <span id="currentYear"></span> Mortgage Maestro. All rights reserved. For illustrative purposes only.</p>
+        </footer>
+    </div>
+
+    <!-- JavaScript Section -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // --- DOM Element References (Shared & Mortgage Calc) ---
+            const currencySelectEl = document.getElementById('currencySelect');
+            const homePriceInput = document.getElementById('homePrice');
+            const homePriceSlider = document.getElementById('homePriceSlider');
+            const homePriceSliderValue = document.getElementById('homePriceSliderValue');
+            const downPaymentEl = document.getElementById('downPayment');
+            const downPaymentPercentEl = document.getElementById('downPaymentPercent');
+            const loanTermEl = document.getElementById('loanTerm');
+            const interestRateInput = document.getElementById('interestRate');
+            const interestRateSlider = document.getElementById('interestRateSlider');
+            const interestRateSliderValue = document.getElementById('interestRateSliderValue');
+            const propertyTaxesEl = document.getElementById('propertyTaxes');
+            const homeInsuranceEl = document.getElementById('homeInsurance');
+            const oneTimeExtraPaymentEl = document.getElementById('oneTimeExtraPayment');
+            const monthlyExtraPaymentEl = document.getElementById('monthlyExtraPayment');
+            const calculateMortgageBtn = document.getElementById('calculateMortgageBtn');
+            const printMortgageBtn = document.getElementById('printMortgageBtn');
+            const errorDisplayEl = document.getElementById('errorDisplay');
+            const errorMessageTextEl = document.getElementById('errorMessageText');
+
+            // Mortgage Calc Output Elements
+            const loanAmountResultEl = document.getElementById('loanAmountResult');
+            const monthlyPaymentPIResultEl = document.getElementById('monthlyPaymentPIResult');
+            const monthlyPropertyTaxResultEl = document.getElementById('monthlyPropertyTaxResult');
+            const monthlyHomeInsuranceResultEl = document.getElementById('monthlyHomeInsuranceResult');
+            const monthlyPITIResultEl = document.getElementById('monthlyPITIResult');
+            const totalPrincipalResultEl = document.getElementById('totalPrincipalResult');
+            const totalInterestResultEl = document.getElementById('totalInterestResult');
+            const totalPaymentsResultEl = document.getElementById('totalPaymentsResult');
+            const loanPayoffDateResultEl = document.getElementById('loanPayoffDateResult');
+            const amortizationTableBodyEl = document.getElementById('amortizationTableBody');
+            const loanBalanceChartCanvas = document.getElementById('loanBalanceChart');
+
+            // --- Affordability Estimator Elements ---
+            const affordAnnualIncomeEl = document.getElementById('affordAnnualIncome');
+            const affordMonthlyDebtsEl = document.getElementById('affordMonthlyDebts');
+            const affordDownPaymentEl = document.getElementById('affordDownPayment');
+            const affordInterestRateEl = document.getElementById('affordInterestRate');
+            const affordLoanTermEl = document.getElementById('affordLoanTerm');
+            const affordPropertyTaxesPercentEl = document.getElementById('affordPropertyTaxesPercent');
+            const affordHomeInsurancePercentEl = document.getElementById('affordHomeInsurancePercent');
+            const affordDTIRatioEl = document.getElementById('affordDTIRatio');
+            const affordTotalDTIRatioEl = document.getElementById('affordTotalDTIRatio');
+            const calculateAffordabilityBtn = document.getElementById('calculateAffordabilityBtn');
+            const affordHomePriceResultEl = document.getElementById('affordHomePriceResult');
+            const affordLoanAmountResultEl = document.getElementById('affordLoanAmountResult');
+            const affordMaxPITIResultEl = document.getElementById('affordMaxPITIResult');
+            const affordMaxPIResultEl = document.getElementById('affordMaxPIResult');
+            const affordEstTaxesResultEl = document.getElementById('affordEstTaxesResult');
+            const affordEstInsuranceResultEl = document.getElementById('affordEstInsuranceResult');
+
+            // --- Refinance Calculator Elements ---
+            const refiCurrentBalanceEl = document.getElementById('refiCurrentBalance');
+            const refiCurrentInterestRateEl = document.getElementById('refiCurrentInterestRate');
+            const refiRemainingTermEl = document.getElementById('refiRemainingTerm');
+            const refiNewInterestRateEl = document.getElementById('refiNewInterestRate');
+            const refiNewLoanTermEl = document.getElementById('refiNewLoanTerm');
+            const refiClosingCostsEl = document.getElementById('refiClosingCosts');
+            const calculateRefinanceBtn = document.getElementById('calculateRefinanceBtn');
+            const refiCurrentPIResultEl = document.getElementById('refiCurrentPIResult');
+            const refiNewPIResultEl = document.getElementById('refiNewPIResult');
+            const refiMonthlySavingsResultEl = document.getElementById('refiMonthlySavingsResult');
+            const refiBreakevenResultEl = document.getElementById('refiBreakevenResult');
+            const refiLifetimeSavingsResultEl = document.getElementById('refiLifetimeSavingsResult');
+            const refiTotalInterestCurrentResultEl = document.getElementById('refiTotalInterestCurrentResult');
+            const refiTotalInterestNewResultEl = document.getElementById('refiTotalInterestNewResult');
+
+
+            // --- Global State ---
+            window.loanBalanceChart = null; 
+            window.amortizationData = []; 
+            window.calculatedLoanAmount = 0;
+            window.calculatedMonthlyPI = 0;
+            window.calculatedMonthlyTax = 0;
+            window.calculatedMonthlyInsurance = 0;
+            window.calculatedMonthlyPITI = 0;
+            window.calculatedTotalPrincipal = 0;
+            window.calculatedTotalInterest = 0;
+            window.calculatedTotalPaymentsPI = 0;
+            window.calculatedPayoffDate = "N/A";
+
+            // --- Tab Switching Logic ---
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active', 'border-sky-400', 'text-sky-400', 'bg-slate-700/60'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    button.classList.add('active', 'border-sky-400', 'text-sky-400', 'bg-slate-700/60');
+                    document.getElementById(button.dataset.tab).classList.add('active');
+                    clearError(); 
+                });
+            });
+
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+            const currencies = {
+                USD: { symbol: '$', code: 'USD', decimal_digits: 2, name: 'US Dollar' },
+                EUR: { symbol: '€', code: 'EUR', decimal_digits: 2, name: 'Euro' },
+                GBP: { symbol: '£', code: 'GBP', decimal_digits: 2, name: 'British Pound' },
+                JPY: { symbol: '¥', code: 'JPY', decimal_digits: 0, name: 'Japanese Yen' },
+                CAD: { symbol: 'C$', code: 'CAD', decimal_digits: 2, name: 'Canadian Dollar' },
+                AUD: { symbol: 'A$', code: 'AUD', decimal_digits: 2, name: 'Australian Dollar' },
+                INR: { symbol: '₹', code: 'INR', decimal_digits: 2, name: 'Indian Rupee' },
+                PKR: { symbol: '₨', code: 'PKR', decimal_digits: 2, name: 'Pakistani Rupee' }
+            };
+
+            function getCurrencySymbol(currencyCode) {
+                return (currencies[currencyCode] && currencies[currencyCode].symbol) || '$';
+            }
+
+            function formatNumberForDisplay(num, currencyCode = currencySelectEl.value) {
+                const number = parseFloat(num);
+                if (isNaN(number)) return `0.00`; 
+                
+                const currencyInfo = currencies[currencyCode] || currencies['USD'];
+                const locale = navigator.language || 'en-US';
+                try {
+                    return new Intl.NumberFormat(locale, {
+                        style: 'decimal',
+                        minimumFractionDigits: currencyInfo.decimal_digits,
+                        maximumFractionDigits: currencyInfo.decimal_digits,
+                    }).format(number);
+                } catch (e) {
+                    return number.toFixed(currencyInfo.decimal_digits);
+                }
+            }
+
+            function formatCurrencyForDisplay(num, currencyCode = currencySelectEl.value) {
+                const symbol = getCurrencySymbol(currencyCode);
+                const formattedNum = formatNumberForDisplay(num, currencyCode);
+                if (formattedNum.includes("N/A")) return `${symbol}N/A`;
+                return `${symbol}${formattedNum}`;
+            }
+
+            if (currencySelectEl) {
+                Object.keys(currencies).forEach(code => {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = `${currencies[code].name} (${currencies[code].symbol})`;
+                    currencySelectEl.appendChild(option);
+                });
+                currencySelectEl.value = 'USD';
+                currencySelectEl.addEventListener('change', (e) => {
+                    updateCurrencySymbolDisplayUI(e.target.value);
+                    const activeTab = document.querySelector('.tab-content.active').id;
+                    if (activeTab === 'mortgageCalculatorTab' && homePriceInput && parseFloat(homePriceInput.value) > 0) calculateMortgage();
+                    else if (activeTab === 'affordabilityEstimatorTab' && affordAnnualIncomeEl && parseFloat(affordAnnualIncomeEl.value) > 0) calculateAffordability();
+                    else if (activeTab === 'refinanceCalculatorTab' && refiCurrentBalanceEl && parseFloat(refiCurrentBalanceEl.value) > 0) calculateRefinance();
+                    else { 
+                        if (homePriceSlider && homePriceSliderValue && homePriceInput) { 
+                           updateSliderValueDisplay(homePriceSlider, homePriceSliderValue, homePriceInput, true);
+                        }
+                    }
+                });
+                updateCurrencySymbolDisplayUI(currencySelectEl.value);
+            }
+
+            function updateCurrencySymbolDisplayUI(currencyCode) {
+                const symbol = getCurrencySymbol(currencyCode);
+                document.querySelectorAll('.currency-symbol-display').forEach(el => el.textContent = symbol);
+            }
+
+            if (loanTermEl) { 
+                loanTermEl.innerHTML = ''; // Clear existing options first
+                for (let year = 1; year <= 40; year++) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = `${year} Year${year > 1 ? 's' : ''}`;
+                    loanTermEl.appendChild(option);
+                }
+                loanTermEl.value = '30'; // Set default value
+            }
+            
+            [affordLoanTermEl, refiNewLoanTermEl].forEach(el => {
+                if (el) {
+                    const commonTerms = [30, 25, 20, 15, 10]; 
+                     el.innerHTML = ''; 
+                    commonTerms.forEach(term => {
+                        const option = document.createElement('option');
+                        option.value = term;
+                        option.textContent = `${term} Years`;
+                        el.appendChild(option);
+                    });
+                    el.value = '30'; 
+                }
+            });
+
+            function updateSliderValueDisplay(slider, displayEl, inputEl, isCurrency) {
+                if (!slider || !displayEl || !inputEl) return;
+                const val = parseFloat(slider.value);
+                const currencyCode = currencySelectEl ? currencySelectEl.value : 'USD';
+                const formattedVal = isCurrency ? formatCurrencyForDisplay(val, currencyCode) : `${val.toFixed(slider.step.includes('.') ? 2 : 0)}%`;
+                displayEl.textContent = formattedVal;
+                if (document.activeElement !== inputEl) { 
+                    inputEl.value = val.toFixed(slider.step.includes('.') ? (slider.step.split('.')[1]?.length || 2) : 0);
+                }
+            }
+            
+            if (homePriceSlider && homePriceSliderValue && homePriceInput) {
+                homePriceSlider.addEventListener('input', () => updateSliderValueDisplay(homePriceSlider, homePriceSliderValue, homePriceInput, true));
+                homePriceInput.addEventListener('change', () => {
+                    if(homePriceSlider) homePriceSlider.value = homePriceInput.value;
+                    updateSliderValueDisplay(homePriceSlider, homePriceSliderValue, homePriceInput, true);
+                    syncDownPaymentAmount(); 
+                });
+                updateSliderValueDisplay(homePriceSlider, homePriceSliderValue, homePriceInput, true);
+            }
+
+            if (interestRateSlider && interestRateSliderValue && interestRateInput) {
+                interestRateSlider.addEventListener('input', () => updateSliderValueDisplay(interestRateSlider, interestRateSliderValue, interestRateInput, false));
+                interestRateInput.addEventListener('change', () => {
+                    if(interestRateSlider) interestRateSlider.value = interestRateInput.value;
+                    updateSliderValueDisplay(interestRateSlider, interestRateSliderValue, interestRateInput, false);
+                });
+                updateSliderValueDisplay(interestRateSlider, interestRateSliderValue, interestRateInput, false);
+            }
+            
+            function syncDownPaymentAmount() { 
+                if (!homePriceInput || !downPaymentEl || !downPaymentPercentEl || !currencySelectEl) return;
+                const price = parseFloat(homePriceInput.value) || 0;
+                const dpPercent = parseFloat(downPaymentPercentEl.value) || 0;
+                const currencyInfo = currencies[currencySelectEl.value] || currencies['USD'];
+                if (price > 0 && dpPercent >= 0) {
+                    downPaymentEl.value = ((dpPercent / 100) * price).toFixed(currencyInfo.decimal_digits);
+                }
+            }
+            function syncDownPaymentPercent() { 
+                if (!homePriceInput || !downPaymentEl || !downPaymentPercentEl) return;
+                const price = parseFloat(homePriceInput.value) || 0;
+                const dpAmount = parseFloat(downPaymentEl.value) || 0;
+                if (price > 0 && dpAmount >= 0) {
+                    downPaymentPercentEl.value = Math.min(100, (dpAmount / price) * 100).toFixed(2);
+                } else if (price === 0) {
+                    downPaymentPercentEl.value = "0.00";
+                }
+            }
+
+            if (homePriceInput && downPaymentEl && downPaymentPercentEl) {
+                homePriceInput.addEventListener('input', syncDownPaymentAmount);
+                downPaymentEl.addEventListener('input', syncDownPaymentPercent);
+                downPaymentPercentEl.addEventListener('input', syncDownPaymentAmount);
+                if (parseFloat(homePriceInput.value) > 0 && parseFloat(downPaymentPercentEl.value) > 0 && parseFloat(downPaymentEl.value) === 0) {
+                     syncDownPaymentAmount();
+                } else if (parseFloat(homePriceInput.value) > 0 && parseFloat(downPaymentEl.value) > 0) {
+                     syncDownPaymentPercent();
+                }
+            }
+
+            function showError(message) {
+                if (!errorMessageTextEl || !errorDisplayEl) return;
+                errorMessageTextEl.textContent = message;
+                errorDisplayEl.classList.remove('hidden');
+            }
+            function clearError() {
+                if (!errorDisplayEl) return;
+                errorDisplayEl.classList.add('hidden');
+            }
+
+            function calculateMortgage() {
+                clearError();
+                const inputs = {
+                    homePrice: parseFloat(homePriceInput.value),
+                    downPayment: parseFloat(downPaymentEl.value),
+                    annualInterestRate: parseFloat(interestRateInput.value),
+                    loanTermYears: parseInt(loanTermEl.value),
+                    annualPropertyTaxes: parseFloat(propertyTaxesEl.value) || 0,
+                    annualHomeInsurance: parseFloat(homeInsuranceEl.value) || 0,
+                    oneTimeExtraPayment: parseFloat(oneTimeExtraPaymentEl.value) || 0,
+                    monthlyExtraPayment: parseFloat(monthlyExtraPaymentEl.value) || 0,
+                };
+
+                if (isNaN(inputs.homePrice) || inputs.homePrice <= 0) { showError("Home Price must be a positive number."); displayResults(0,0,0,0,0,0,0,"N/A",[]); return; }
+                if (isNaN(inputs.downPayment) || inputs.downPayment < 0) { showError("Down Payment must be a non-negative number."); displayResults(0,0,0,0,0,0,0,"N/A",[]); return; }
+                if (inputs.downPayment > inputs.homePrice) { showError("Down Payment cannot exceed Home Price."); displayResults(0,0,0,0,0,0,0,"N/A",[]); return; }
+                if (isNaN(inputs.annualInterestRate) || inputs.annualInterestRate < 0 || inputs.annualInterestRate > 100) { showError("Interest Rate must be between 0 and 100."); displayResults(0,0,0,0,0,0,0,"N/A",[]); return; }
+                 if (isNaN(inputs.loanTermYears) || inputs.loanTermYears <= 0) { showError("Loan Term must be positive."); displayResults(0,0,0,0,0,0,0,"N/A",[]); return; }
+
+
+                let loanAmount = inputs.homePrice - inputs.downPayment;
+                window.calculatedLoanAmount = loanAmount;
+
+                if (loanAmount <= 0) {
+                    const pitiNoLoan = (inputs.annualPropertyTaxes + inputs.annualHomeInsurance) / 12;
+                    displayResults(0, 0, inputs.annualPropertyTaxes / 12, inputs.annualHomeInsurance / 12, pitiNoLoan, 0, 0, "N/A (No Loan)", []);
+                    if (loanAmount < 0) showError("Down payment exceeds home price."); else showError("Loan amount is zero. No mortgage needed.");
+                    return;
+                }
+                
+                let effectiveLoanAmount = loanAmount - inputs.oneTimeExtraPayment;
+                if (effectiveLoanAmount < 0) effectiveLoanAmount = 0;
+
+                const monthlyInterestRate = inputs.annualInterestRate / 100 / 12;
+                const numberOfPayments = inputs.loanTermYears * 12;
+
+                let monthlyPI = 0;
+                if (effectiveLoanAmount > 0 && numberOfPayments > 0) { // Added numberOfPayments > 0 check
+                    if (monthlyInterestRate > 0) {
+                        monthlyPI = effectiveLoanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) / (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+                    } else { 
+                        monthlyPI = effectiveLoanAmount / numberOfPayments;
+                    }
+                }
+                if (!isFinite(monthlyPI) || monthlyPI < 0) monthlyPI = 0;
+                window.calculatedMonthlyPI = monthlyPI;
+
+                window.amortizationData = [];
+                let currentBalance = effectiveLoanAmount;
+                let totalInterestPaidInternal = 0; 
+                let totalPrincipalPaidInternal = inputs.oneTimeExtraPayment > effectiveLoanAmount ? effectiveLoanAmount : inputs.oneTimeExtraPayment;
+                let cumulativeInterestForChart = 0; 
+                let payoffMonth = 0;
+
+                if (effectiveLoanAmount > 0) { 
+                    // Add initial state for chart
+                    window.amortizationData.push({ 
+                        month: 0, payment: 0, principal: 0, interest: 0, extraPaymentApplied: inputs.oneTimeExtraPayment > 0 ? inputs.oneTimeExtraPayment : 0, 
+                        totalInterest: 0, cumulativeInterestForChart: 0, balance: effectiveLoanAmount 
+                    });
+
+                    for (let month = 1; month <= numberOfPayments; month++) {
+                        if (currentBalance <= 0.005) break;
+                        payoffMonth = month;
+
+                        const interestForMonth = currentBalance * monthlyInterestRate;
+                        cumulativeInterestForChart += interestForMonth; 
+
+                        let principalPaymentThisMonth = monthlyPI - interestForMonth;
+                        let actualExtraPaymentThisMonth = inputs.monthlyExtraPayment;
+                        
+                        if (principalPaymentThisMonth < 0) principalPaymentThisMonth = 0;
+
+                        let paymentForMonth = monthlyPI + actualExtraPaymentThisMonth;
+                        
+                        // Final payment adjustment: If current balance is less than or equal to the scheduled payment
+                        if (currentBalance <= paymentForMonth && currentBalance > 0) { 
+                            principalPaymentThisMonth = currentBalance; // Principal is the remaining balance
+                            // Interest for the last payment is on the *remaining balance before this payment*
+                            const lastInterest = currentBalance * monthlyInterestRate; // Re-calc interest on remaining
+                            cumulativeInterestForChart = totalInterestPaidInternal + lastInterest; // Adjust cumulative
+                            paymentForMonth = currentBalance + lastInterest; // Total final payment
+                            actualExtraPaymentThisMonth = 0; 
+                        } else {
+                            // Standard adjustment if combined principal would overpay
+                            let combinedPrincipal = principalPaymentThisMonth + actualExtraPaymentThisMonth;
+                            if (combinedPrincipal > currentBalance) {
+                                actualExtraPaymentThisMonth = Math.max(0, currentBalance - principalPaymentThisMonth);
+                            }
+                        }
+                        
+                        if(principalPaymentThisMonth < 0) principalPaymentThisMonth = 0;
+
+                        let totalPrincipalForMonth = principalPaymentThisMonth + actualExtraPaymentThisMonth;
+                         if (totalPrincipalForMonth > currentBalance) totalPrincipalForMonth = currentBalance; 
+
+                        currentBalance -= totalPrincipalForMonth;
+                        if (currentBalance < 0.005) currentBalance = 0; 
+
+                        totalInterestPaidInternal += interestForMonth;
+                        // totalPrincipalPaidInternal += totalPrincipalForMonth; // This was double counting initial payment if any
+                        
+                        window.amortizationData.push({
+                            month: month,
+                            payment: paymentForMonth,
+                            principal: totalPrincipalForMonth,
+                            interest: interestForMonth,
+                            extraPaymentApplied: actualExtraPaymentThisMonth,
+                            totalInterest: totalInterestPaidInternal, 
+                            cumulativeInterestForChart: cumulativeInterestForChart, 
+                            balance: currentBalance
+                        });
+                        if (currentBalance <= 0) break;
+                    }
+                } else { 
+                     payoffMonth = 0; 
+                     window.amortizationData.push({ 
+                         month:0, payment: inputs.oneTimeExtraPayment, principal: loanAmount, 
+                         interest:0, extraPaymentApplied:0, totalInterest:0, 
+                         cumulativeInterestForChart: 0, balance:0
+                    });
+                }
+                // Recalculate totalPrincipalPaidInternal based on amortization schedule sum of principals if loan existed
+                if (effectiveLoanAmount > 0 && window.amortizationData.length > 1) { // More than just month 0
+                    totalPrincipalPaidInternal = window.amortizationData.reduce((sum, row) => sum + (row.month > 0 ? row.principal : 0), 0) + (inputs.oneTimeExtraPayment > effectiveLoanAmount ? effectiveLoanAmount : inputs.oneTimeExtraPayment);
+                } else if (effectiveLoanAmount === 0) {
+                    totalPrincipalPaidInternal = loanAmount; // Paid by downpayment + one-time
+                }
+
+
+                window.calculatedTotalPrincipal = loanAmount; 
+                window.calculatedTotalInterest = totalInterestPaidInternal;
+                window.calculatedTotalPaymentsPI = loanAmount + totalInterestPaidInternal;
+
+                const monthlyTaxes = inputs.annualPropertyTaxes / 12;
+                const monthlyInsurance = inputs.annualHomeInsurance / 12;
+                const totalMonthlyPITI = window.calculatedMonthlyPI + monthlyTaxes + monthlyInsurance + inputs.monthlyExtraPayment; 
+
+                window.calculatedMonthlyTax = monthlyTaxes;
+                window.calculatedMonthlyInsurance = monthlyInsurance;
+                window.calculatedMonthlyPITI = totalMonthlyPITI;
+
+                const payoffDate = new Date();
+                if (payoffMonth > 0) {
+                    payoffDate.setMonth(payoffDate.getMonth() + payoffMonth);
+                    window.calculatedPayoffDate = payoffDate.toLocaleDateString(navigator.language || 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                } else if (effectiveLoanAmount === 0 && loanAmount > 0) {
+                    window.calculatedPayoffDate = "Paid upfront";
+                } else if (loanAmount === 0) {
+                    window.calculatedPayoffDate = "N/A (No Loan)";
+                } else {
+                     window.calculatedPayoffDate = "Error calculating";
+                }
+                
+                displayResults(
+                    loanAmount,
+                    window.calculatedMonthlyPI, 
+                    monthlyTaxes,
+                    monthlyInsurance,
+                    totalMonthlyPITI, 
+                    totalPrincipalPaidInternal, 
+                    totalInterestPaidInternal,
+                    window.calculatedPayoffDate,
+                    window.amortizationData
+                );
+            }
+
+            function displayResults(loanAmount, monthlyPI, monthlyTax, monthlyInsurance, totalPITI, totalPrincipalAmort, totalInterestAmort, payoffDateStr, amortizationSched) {
+                const currentCurrency = currencySelectEl.value;
+                loanAmountResultEl.textContent = formatCurrencyForDisplay(loanAmount, currentCurrency);
+                monthlyPaymentPIResultEl.textContent = formatCurrencyForDisplay(monthlyPI, currentCurrency);
+                monthlyPropertyTaxResultEl.textContent = formatCurrencyForDisplay(monthlyTax, currentCurrency);
+                monthlyHomeInsuranceResultEl.textContent = formatCurrencyForDisplay(monthlyInsurance, currentCurrency);
+                monthlyPITIResultEl.textContent = formatCurrencyForDisplay(totalPITI, currentCurrency);
+                totalPrincipalResultEl.textContent = formatCurrencyForDisplay(window.calculatedLoanAmount, currentCurrency); 
+                totalInterestResultEl.textContent = formatCurrencyForDisplay(totalInterestAmort, currentCurrency);
+                totalPaymentsResultEl.textContent = formatCurrencyForDisplay(window.calculatedLoanAmount + totalInterestAmort, currentCurrency);
+                loanPayoffDateResultEl.textContent = payoffDateStr;
+
+                amortizationTableBodyEl.innerHTML = ''; 
+                const tableDisplayData = amortizationSched.filter(row => row.month > 0 || (row.month === 0 && row.payment > 0 && window.calculatedLoanAmount === row.payment && window.calculatedLoanAmount > 0));
+
+                if (tableDisplayData && tableDisplayData.length > 0) {
+                    tableDisplayData.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.className = 'result-item-anim';
+                        tr.innerHTML = `
+                            <td class="p-2 sm:p-3 text-center">${row.month}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.payment, currentCurrency)}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.principal, currentCurrency)}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.interest, currentCurrency)}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.extraPaymentApplied, currentCurrency)}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.totalInterest, currentCurrency)}</td>
+                            <td class="p-2 sm:p-3 text-right">${formatCurrencyForDisplay(row.balance, currentCurrency)}</td>
+                        `;
+                        amortizationTableBodyEl.appendChild(tr);
+                    });
+                } else if (amortizationSched.length === 1 && amortizationSched[0].month === 0 && amortizationSched[0].balance === 0 && loanAmount > 0) {
+                     amortizationTableBodyEl.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Loan paid off with one-time payment.</td></tr>';
+                } else {
+                    amortizationTableBodyEl.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-500">No amortization data to display.</td></tr>';
+                }
+
+                if (window.loanBalanceChart && typeof window.loanBalanceChart.destroy === 'function') {
+                    window.loanBalanceChart.destroy();
+                }
+                
+                if (loanBalanceChartCanvas && loanAmount > 0 && amortizationSched && 
+                    (amortizationSched.length > 1 || (amortizationSched.length === 1 && amortizationSched[0].month > 0)) ) {
+                    
+                    const chartLabels = amortizationSched.map(d => d.month === 0 ? "Initial" : `M${d.month}`);
+                    const chartBalanceData = amortizationSched.map(d => d.balance);
+                    const chartPrincipalPaidData = amortizationSched.map(d => {
+                        let principalPaid = window.calculatedLoanAmount - d.balance;
+                        return principalPaid < 0 ? 0 : principalPaid; 
+                    });
+                    const chartCumulativeInterestData = amortizationSched.map(d => d.cumulativeInterestForChart);
+
+                    const ctx = loanBalanceChartCanvas.getContext('2d');
+                    window.loanBalanceChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [
+                                {
+                                    label: 'Balance', data: chartBalanceData,
+                                    borderColor: 'rgb(59, 130, 246)', backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                                    fill: true, tension: 0.2, pointRadius: chartLabels.length > 60 ? 0 : 2,
+                                    yAxisID: 'yPrimary'
+                                },
+                                {
+                                    label: 'Principal Paid', data: chartPrincipalPaidData,
+                                    borderColor: 'rgb(16, 185, 129)', backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                                    fill: true, tension: 0.2, pointRadius: chartLabels.length > 60 ? 0 : 2,
+                                    yAxisID: 'yPrimary'
+                                },
+                                {
+                                    label: 'Interest Paid (Cumulative)', data: chartCumulativeInterestData,
+                                    borderColor: 'rgb(239, 68, 68)', backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                                    fill: false, tension: 0.2, pointRadius: chartLabels.length > 60 ? 0 : 2,
+                                    yAxisID: 'yPrimary' // Keep on primary axis for now, secondary can be added if scale mismatch is large
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false, },
+                            stacked: false, 
+                            scales: {
+                                yPrimary: { 
+                                    type: 'linear', display: true, position: 'left',
+                                    beginAtZero: true, 
+                                    ticks: { color: '#9ca3af', callback: value => formatNumberForDisplay(value, currentCurrency) }, 
+                                    grid: { color: '#374151' } 
+                                },
+                                x: { 
+                                    ticks: { color: '#9ca3af', maxRotation: 0, autoSkip: true, 
+                                             maxTicksLimit: (parseInt(loanTermEl.value) <= 2 && chartLabels.length > 12) ? 12 : 
+                                                            (parseInt(loanTermEl.value) <=5 && chartLabels.length > 24) ? 12 :
+                                                            (parseInt(loanTermEl.value) <=15 ? 10 : 8) 
+                                           }, 
+                                    grid: { display: false } 
+                                }
+                            },
+                            plugins: { 
+                                legend: { labels: { color: '#d1d5db', usePointStyle: true, boxWidth: 8 } }, 
+                                tooltip: {
+                                    callbacks: { 
+                                        label: (context) => {
+                                            let label = context.dataset.label || '';
+                                            if (label) { label += ': '; }
+                                            if (context.parsed.y !== null) {
+                                                label += formatCurrencyForDisplay(context.parsed.y, currentCurrency);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } else if (loanBalanceChartCanvas) { 
+                     const ctx = loanBalanceChartCanvas.getContext('2d');
+                     ctx.clearRect(0, 0, loanBalanceChartCanvas.width, loanBalanceChartCanvas.height);
+                }
+            }
+            
+            if (calculateMortgageBtn) {
+                calculateMortgageBtn.addEventListener('click', calculateMortgage);
+            }
+            
+            // --- Affordability Calculator (functionality as previously provided) ---
+            function calculateAffordability() {
+                clearError();
+                const annualIncome = parseFloat(affordAnnualIncomeEl.value);
+                const monthlyDebts = parseFloat(affordMonthlyDebtsEl.value) || 0;
+                const downPayment = parseFloat(affordDownPaymentEl.value) || 0;
+                const annualInterestRate = parseFloat(affordInterestRateEl.value);
+                const loanTermYears = parseInt(affordLoanTermEl.value);
+                const taxPercent = parseFloat(affordPropertyTaxesPercentEl.value) / 100 || 0;
+                const insurancePercent = parseFloat(affordHomeInsurancePercentEl.value) / 100 || 0;
+                const dtiHousingRatio = parseFloat(affordDTIRatioEl.value) / 100; 
+                const dtiTotalRatio = parseFloat(affordTotalDTIRatioEl.value) / 100; 
+
+                if (isNaN(annualIncome) || annualIncome <= 0) { showError("Annual Income must be positive."); return; }
+                if (isNaN(annualInterestRate) || annualInterestRate <= 0 || annualInterestRate > 100) { showError("Interest Rate must be between 0-100."); return; }
+                if (isNaN(loanTermYears) || loanTermYears <= 0) { showError("Loan Term must be positive."); return; }
+                if (isNaN(dtiHousingRatio) || dtiHousingRatio <= 0 || dtiHousingRatio >=1) { showError("Housing DTI must be between 0 and 100%."); return; }
+                if (isNaN(dtiTotalRatio) || dtiTotalRatio <= 0 || dtiTotalRatio >=1) { showError("Total DTI must be between 0 and 100%."); return; }
+                if (dtiHousingRatio > dtiTotalRatio) { showError("Housing DTI cannot exceed Total DTI."); return; }
+
+                const monthlyIncome = annualIncome / 12;
+                const maxPITIFromHousingDTI = monthlyIncome * dtiHousingRatio;
+                const maxPITIFromTotalDTI = (monthlyIncome * dtiTotalRatio) - monthlyDebts;
+                const maxAllowablePITI = Math.min(maxPITIFromHousingDTI, maxPITIFromTotalDTI);
+
+                if (maxAllowablePITI <= 0) {
+                    showError("Based on your income and debts, the maximum affordable PITI is zero or less.");
+                    affordHomePriceResultEl.textContent = formatCurrencyForDisplay(0);
+                    affordLoanAmountResultEl.textContent = formatCurrencyForDisplay(0);
+                    affordMaxPITIResultEl.textContent = formatCurrencyForDisplay(0);
+                    affordMaxPIResultEl.textContent = formatCurrencyForDisplay(0);
+                    affordEstTaxesResultEl.textContent = formatCurrencyForDisplay(0);
+                    affordEstInsuranceResultEl.textContent = formatCurrencyForDisplay(0);
+                    return;
+                }
+
+                let affordableHomePrice = 0;
+                let maxLoanAmount = 0;
+                let estimatedMonthlyPI = 0;
+                
+                const monthlyRate = annualInterestRate / 100 / 12;
+                const numPayments = loanTermYears * 12;
+
+                let low = downPayment;
+                let high = (maxAllowablePITI * numPayments * 2) + downPayment; // Increased upper bound for safety
+                
+                for (let i = 0; i < 100; i++) { // Increased iterations for better convergence
+                    let midPrice = (low + high) / 2;
+                    if (midPrice < 0) midPrice = 0; 
+                    if (midPrice < downPayment && downPayment > 0) midPrice = downPayment;
+
+                    let estTaxes = (midPrice * taxPercent) / 12;
+                    let estInsurance = (midPrice * insurancePercent) / 12;
+                    
+                    let maxPIForThisPrice = maxAllowablePITI - estTaxes - estInsurance;
+                    if (maxPIForThisPrice < 0) maxPIForThisPrice = 0;
+
+                    let loanForThisPI = 0;
+                    if (maxPIForThisPrice > 0 && numPayments > 0) { 
+                        if (monthlyRate > 0) {
+                             loanForThisPI = maxPIForThisPrice * (Math.pow(1 + monthlyRate, numPayments) - 1) / (monthlyRate * Math.pow(1 + monthlyRate, numPayments));
+                        } else { 
+                             loanForThisPI = maxPIForThisPrice * numPayments;
+                        }
+                    }
+                    
+                    let calculatedHomePrice = loanForThisPI + downPayment;
+
+                    if (Math.abs(calculatedHomePrice - midPrice) < 50 || high - low < 50) { // Stricter convergence
+                        affordableHomePrice = Math.max(0, calculatedHomePrice); 
+                        maxLoanAmount = Math.max(0, loanForThisPI);
+                        estimatedMonthlyPI = maxPIForThisPrice;
+                        break;
+                    }
+                    if (calculatedHomePrice > midPrice) low = midPrice;
+                    else high = midPrice;
+                    
+                    affordableHomePrice = Math.max(0, calculatedHomePrice);
+                    maxLoanAmount = Math.max(0, loanForThisPI);
+                    estimatedMonthlyPI = maxPIForThisPrice;
+                }
+                 
+                if (affordableHomePrice < downPayment) affordableHomePrice = downPayment;
+                if (maxLoanAmount < 0) maxLoanAmount = 0;
+                if (estimatedMonthlyPI < 0) estimatedMonthlyPI = 0;
+
+                affordHomePriceResultEl.textContent = formatCurrencyForDisplay(affordableHomePrice);
+                affordLoanAmountResultEl.textContent = formatCurrencyForDisplay(maxLoanAmount);
+                affordMaxPITIResultEl.textContent = formatCurrencyForDisplay(maxAllowablePITI); 
+                affordMaxPIResultEl.textContent = formatCurrencyForDisplay(estimatedMonthlyPI); 
+                affordEstTaxesResultEl.textContent = formatCurrencyForDisplay((affordableHomePrice * taxPercent) / 12);
+                affordEstInsuranceResultEl.textContent = formatCurrencyForDisplay((affordableHomePrice * insurancePercent) / 12);
+            }
+            if(calculateAffordabilityBtn) calculateAffordabilityBtn.addEventListener('click', calculateAffordability);
+
+            // --- Refinance Calculator (functionality as previously provided) ---
+            function calculateRefinance() {
+                clearError();
+                const currentBalance = parseFloat(refiCurrentBalanceEl.value);
+                const currentRate = parseFloat(refiCurrentInterestRateEl.value) / 100;
+                const currentRemainingYears = parseFloat(refiRemainingTermEl.value);
+                
+                const newRate = parseFloat(refiNewInterestRateEl.value) / 100;
+                const newTermYears = parseInt(refiNewLoanTermEl.value);
+                const closingCosts = parseFloat(refiClosingCostsEl.value) || 0;
+
+                if (isNaN(currentBalance) || currentBalance <= 0) { showError("Current balance must be positive."); return; }
+                // ... (other refinance validations)
+
+                const currentMonthlyRate = currentRate / 12;
+                const currentNumPayments = currentRemainingYears * 12;
+                
+                let currentMonthlyPI = 0;
+                if(currentBalance > 0 && currentNumPayments > 0){ // Added currentNumPayments check
+                    if (currentMonthlyRate > 0) {
+                        currentMonthlyPI = currentBalance * (currentMonthlyRate * Math.pow(1 + currentMonthlyRate, currentNumPayments)) / (Math.pow(1 + currentMonthlyRate, currentNumPayments) - 1);
+                    } else { currentMonthlyPI = currentBalance / currentNumPayments; }
+                }
+                if (!isFinite(currentMonthlyPI)) currentMonthlyPI = 0;
+
+                const newLoanAmount = currentBalance; 
+                const newMonthlyRate = newRate / 12;
+                const newNumPayments = newTermYears * 12;
+
+                let newMonthlyPI = 0;
+                if(newLoanAmount > 0 && newNumPayments > 0){ // Added newNumPayments check
+                    if (newMonthlyRate > 0) {
+                        newMonthlyPI = newLoanAmount * (newMonthlyRate * Math.pow(1 + newMonthlyRate, newNumPayments)) / (Math.pow(1 + newMonthlyRate, newNumPayments) - 1);
+                    } else { newMonthlyPI = newLoanAmount / newNumPayments; }
+                }
+                if (!isFinite(newMonthlyPI)) newMonthlyPI = 0;
+
+                const monthlySavings = currentMonthlyPI - newMonthlyPI;
+                let breakEvenMonths = "N/A";
+                 if (monthlySavings > 0 && closingCosts >= 0) { 
+                    breakEvenMonths = closingCosts === 0 ? "Immediate" : Math.ceil(closingCosts / monthlySavings) + " months";
+                } else if (monthlySavings <= 0 && closingCosts > 0) {
+                    breakEvenMonths = "No savings / Doesn't break even";
+                } else { 
+                     breakEvenMonths = "No benefit or same payment";
+                }
+
+                let totalInterestCurrent = 0;
+                let tempBalanceCurrent = currentBalance;
+                if(currentBalance > 0 && currentNumPayments > 0 && currentMonthlyPI > 0){
+                    for (let i = 0; i < currentNumPayments; i++) {
+                        if (tempBalanceCurrent <=0.005) break;
+                        let interest = tempBalanceCurrent * currentMonthlyRate;
+                        totalInterestCurrent += interest;
+                        let principal = currentMonthlyPI - interest;
+                         if (principal > tempBalanceCurrent) principal = tempBalanceCurrent;
+                         if (principal < 0) principal = 0; 
+                        tempBalanceCurrent -= principal;
+                    }
+                }
+
+                let totalInterestNew = 0;
+                let tempBalanceNew = newLoanAmount;
+                if(newLoanAmount > 0 && newNumPayments > 0 && newMonthlyPI > 0){
+                    for (let i = 0; i < newNumPayments; i++) {
+                         if (tempBalanceNew <=0.005) break;
+                        let interest = tempBalanceNew * newMonthlyRate;
+                        totalInterestNew += interest;
+                        let principal = newMonthlyPI - interest;
+                        if (principal > tempBalanceNew) principal = tempBalanceNew;
+                         if (principal < 0) principal = 0; 
+                        tempBalanceNew -= principal;
+                    }
+                }
+                
+                const lifetimeSavingsInterest = totalInterestCurrent - (totalInterestNew + closingCosts);
+
+                refiCurrentPIResultEl.textContent = formatCurrencyForDisplay(currentMonthlyPI);
+                refiNewPIResultEl.textContent = formatCurrencyForDisplay(newMonthlyPI);
+                refiMonthlySavingsResultEl.textContent = formatCurrencyForDisplay(monthlySavings);
+                if (monthlySavings < 0) { refiMonthlySavingsResultEl.classList.add('text-red-400/80'); refiMonthlySavingsResultEl.classList.remove('text-green-400');} 
+                else { refiMonthlySavingsResultEl.classList.remove('text-red-400/80'); refiMonthlySavingsResultEl.classList.add('text-green-400');}
+                refiBreakevenResultEl.textContent = breakEvenMonths;
+                refiLifetimeSavingsResultEl.textContent = formatCurrencyForDisplay(lifetimeSavingsInterest);
+                if (lifetimeSavingsInterest < 0) { refiLifetimeSavingsResultEl.classList.add('text-red-400/80'); refiLifetimeSavingsResultEl.classList.remove('text-teal-400');} 
+                else { refiLifetimeSavingsResultEl.classList.remove('text-red-400/80'); refiLifetimeSavingsResultEl.classList.add('text-teal-400');}
+                refiTotalInterestCurrentResultEl.textContent = formatCurrencyForDisplay(totalInterestCurrent);
+                refiTotalInterestNewResultEl.textContent = formatCurrencyForDisplay(totalInterestNew + closingCosts);
+            }
+            if(calculateRefinanceBtn) calculateRefinanceBtn.addEventListener('click', calculateRefinance);
+
+            // --- PDF Download (code is the same as previous, ensure it uses global vars correctly) ---
+            if (printMortgageBtn) {
+                printMortgageBtn.addEventListener('click', () => {
+                    const hasValidAmortization = window.amortizationData && window.amortizationData.length > 0 &&
+                                           (window.amortizationData.length > 1 || 
+                                           (window.amortizationData.length === 1 && window.amortizationData[0].month > 0) || 
+                                           (window.amortizationData.length === 1 && window.amortizationData[0].month === 0 && window.calculatedLoanAmount > 0 && window.amortizationData[0].balance === 0) 
+                                           );
+
+                    if (!hasValidAmortization && window.calculatedLoanAmount <=0) {
+                        showError("Please calculate a valid mortgage first to generate a report.");
+                        return;
+                    }
+                    
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    const selectedCurrencyCode = currencySelectEl.value;
+                    const currencySymbol = getCurrencySymbol(selectedCurrencyCode);
+                    const pdfFormatCurrency = (value) => `${currencySymbol}${formatNumberForDisplay(value, selectedCurrencyCode)}`;
+
+                    doc.setFontSize(18); doc.setTextColor(40, 40, 40);
+                    doc.text("Mortgage Maestro - Loan Report", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+                    doc.setFontSize(10); doc.setTextColor(100, 100, 100);
+                    doc.text(`Report Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+
+                    let yPos = 40; const leftMargin = 14; const contentWidth = doc.internal.pageSize.getWidth() - (2 * leftMargin);
+
+                    doc.setFontSize(14); doc.setTextColor(0, 122, 204); doc.text("Loan Configuration", leftMargin, yPos); yPos += 7;
+                    doc.setFontSize(10); doc.setTextColor(50, 50, 50);
+
+                    const loanConfigBody = [
+                        ['Home Price:', pdfFormatCurrency(parseFloat(homePriceInput.value))],
+                        ['Down Payment:', pdfFormatCurrency(parseFloat(downPaymentEl.value))],
+                        ['Loan Amount:', pdfFormatCurrency(window.calculatedLoanAmount)],
+                        ['Interest Rate:', `${parseFloat(interestRateInput.value).toFixed(2)}%`],
+                        ['Loan Term:', `${parseInt(loanTermEl.value)} years`],
+                    ];
+                    if (parseFloat(propertyTaxesEl.value) > 0) loanConfigBody.push(['Annual Property Taxes:', pdfFormatCurrency(parseFloat(propertyTaxesEl.value))]);
+                    if (parseFloat(homeInsuranceEl.value) > 0) loanConfigBody.push(['Annual Home Insurance:', pdfFormatCurrency(parseFloat(homeInsuranceEl.value))]);
+                    // Only show extra payments in PDF if they apply to an actual loan
+                    if (parseFloat(oneTimeExtraPaymentEl.value) > 0 && window.calculatedLoanAmount > 0 && window.calculatedLoanAmount > parseFloat(oneTimeExtraPaymentEl.value) ) loanConfigBody.push(['One-Time Extra Payment:', pdfFormatCurrency(parseFloat(oneTimeExtraPaymentEl.value))]);
+                    if (parseFloat(monthlyExtraPaymentEl.value) > 0 && window.calculatedLoanAmount > 0) loanConfigBody.push(['Recurring Monthly Extra Payment:', pdfFormatCurrency(parseFloat(monthlyExtraPaymentEl.value))]);
+
+
+                    doc.autoTable({
+                        startY: yPos, body: loanConfigBody, theme: 'plain',
+                        styles: { fontSize: 10, cellPadding: 1.5 },
+                        columnStyles: { 0: { fontStyle: 'bold', cellWidth: contentWidth * 0.45 }, 1: { cellWidth: contentWidth * 0.55, halign: 'left' } },
+                        margin: { left: leftMargin, right: leftMargin }
+                    });
+                    yPos = doc.lastAutoTable.finalY + 8;
+
+                    doc.setFontSize(14); doc.setTextColor(0, 122, 204); doc.text("Payment Summary", leftMargin, yPos); yPos += 7;
+                    doc.setFontSize(10); doc.setTextColor(50, 50, 50);
+
+                    const paymentSummaryBody = [
+                        ['Monthly Principal & Interest (P&I):', pdfFormatCurrency(window.calculatedMonthlyPI)],
+                    ];
+                    if (window.calculatedMonthlyTax > 0) paymentSummaryBody.push(['Monthly Property Tax:', pdfFormatCurrency(window.calculatedMonthlyTax)]);
+                    if (window.calculatedMonthlyInsurance > 0) paymentSummaryBody.push(['Monthly Home Insurance:', pdfFormatCurrency(window.calculatedMonthlyInsurance)]);
+                    paymentSummaryBody.push(
+                        ['Total Monthly Payment (PITI):', pdfFormatCurrency(window.calculatedMonthlyPITI)],
+                        ['Total Principal of Loan:', pdfFormatCurrency(window.calculatedTotalPrincipal)], 
+                        ['Total Interest Paid:', pdfFormatCurrency(window.calculatedTotalInterest)],
+                        ['Total of All P&I Payments:', pdfFormatCurrency(window.calculatedTotalPaymentsPI)],
+                        ['Loan Payoff Date:', window.calculatedPayoffDate]
+                    );
+
+                    doc.autoTable({
+                        startY: yPos, body: paymentSummaryBody, theme: 'plain',
+                        styles: { fontSize: 10, cellPadding: 1.5 },
+                        columnStyles: { 0: { fontStyle: 'bold', cellWidth: contentWidth * 0.45 }, 1: { cellWidth: contentWidth * 0.55, halign: 'left' }},
+                        margin: { left: leftMargin, right: leftMargin }
+                    });
+                    yPos = doc.lastAutoTable.finalY + 10;
+
+                    if (window.loanBalanceChart && window.loanBalanceChart.canvas && window.calculatedLoanAmount > 0 && 
+                        (window.amortizationData.length > 1 || (window.amortizationData.length === 1 && window.amortizationData[0].month > 0))) {
+                        if (yPos > doc.internal.pageSize.getHeight() - 90) { doc.addPage(); yPos = 20; }
+                        doc.setFontSize(14); doc.setTextColor(0, 122, 204); doc.text("Loan Balance Over Time", leftMargin, yPos); yPos += 7;
+                        try {
+                            const chartImage = window.loanBalanceChart.toBase64Image();
+                            const imgProps = doc.getImageProperties(chartImage);
+                            const chartWidth = contentWidth;
+                            let chartHeight = (imgProps.height * chartWidth) / imgProps.width;
+                            chartHeight = Math.min(chartHeight, 80); 
+                            
+                            if (yPos + chartHeight > doc.internal.pageSize.getHeight() - 20) { doc.addPage(); yPos = 20; }
+                            doc.addImage(chartImage, 'PNG', leftMargin, yPos, chartWidth, chartHeight);
+                            yPos += chartHeight + 10;
+                        } catch (e) {
+                            console.error("Error adding chart to PDF:", e);
+                            doc.setTextColor(255,0,0); doc.text("Could not render chart image.", leftMargin, yPos); yPos += 8;
+                        }
+                    }
+
+                    const pdfAmortizationData = window.amortizationData.filter(row => row.month > 0 || (row.month === 0 && row.payment > 0 && window.calculatedLoanAmount === row.payment && window.calculatedLoanAmount > 0));
+                    if (pdfAmortizationData && pdfAmortizationData.length > 0) {
+                        if (yPos > doc.internal.pageSize.getHeight() - 60) { doc.addPage(); yPos = 20; }
+                        doc.setFontSize(14); doc.setTextColor(0, 122, 204); doc.text("Amortization Schedule", leftMargin, yPos); yPos += 7;
+
+                        const tableHead = [['#', 'Payment', 'Principal', 'Interest', 'Extra Paid', 'Total Interest', 'Balance']];
+                        const tableBody = pdfAmortizationData.map(row => [
+                            row.month,
+                            pdfFormatCurrency(row.payment), 
+                            pdfFormatCurrency(row.principal), 
+                            pdfFormatCurrency(row.interest),
+                            pdfFormatCurrency(row.extraPaymentApplied), 
+                            pdfFormatCurrency(row.totalInterest), 
+                            pdfFormatCurrency(row.balance)
+                        ]);
+
+                        doc.autoTable({
+                            startY: yPos, head: tableHead, body: tableBody, theme: 'striped',
+                            headStyles: { fillColor: [22, 160, 133], textColor: 255, fontStyle: 'bold' },
+                            styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
+                            columnStyles: {
+                                0: { halign: 'center', cellWidth: 15 }, 1: { halign: 'right' }, 2: { halign: 'right' },
+                                3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' }
+                            },
+                            margin: { left: leftMargin, right: leftMargin },
+                            didDrawPage: function (data) {
+                                doc.setFontSize(8); doc.setTextColor(150);
+                                doc.text('Page ' + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 10);
+                            }
+                        });
+                    }
+                    doc.save('Mortgage-Maestro-Report.pdf');
+                });
+            }
+            
+            // Initial calculation for Mortgage tab if homePrice has a value
+            if (homePriceInput && parseFloat(homePriceInput.value) > 0) {
+                calculateMortgage();
+            } else { 
+                // Ensure results are reset or cleared if no initial calculation
+                displayResults(0,0,0,0,0,0,0,"N/A",[]);
+            }
+        });
+    </script>
+</body>
+</html>
